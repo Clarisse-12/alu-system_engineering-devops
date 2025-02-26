@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
 
+
 # Define variables
 PRIVATE_KEY_NAME="school"
 KEY_BITS=4096
-PASSPHRASE="betty"
 
-# Generate the RSA key pair
-openssl genrsa -aes256 -out "$PRIVATE_KEY_NAME" "$KEY_BITS" -passout pass:"$PASSPHRASE"
+# Prompt for the passphrase
+read -s -p "Enter passphrase: " PASSPHRASE
+echo "" # Add a newline for better formatting
+
+# Generate the RSA key pair (using PKCS#8 format for OpenSSH compatibility)
+openssl genpkey -algorithm RSA -out "$PRIVATE_KEY_NAME" -aes256 -pkeyopt rsa_keygen_bits:"$KEY_BITS" -pass pass:"$PASSPHRASE"
 
 # Set permissions for the private key (read-only for the owner)
 chmod 400 "$PRIVATE_KEY_NAME"
 
 # Generate the public key from the private key
-openssl rsa -in "$PRIVATE_KEY_NAME" -out "${PRIVATE_KEY_NAME}.pub" -pubout -passin pass:"$PASSPHRASE"
+openssl rsa -in "$PRIVATE_KEY_NAME" -pubout -out "${PRIVATE_KEY_NAME}.pub" -passin pass:"$PASSPHRASE"
 
 # Set permissions for the public key (read-only for the owner)
 chmod 400 "${PRIVATE_KEY_NAME}.pub"
 
-echo "RSA key pair generated successfully."
-echo "Private key: $PRIVATE_KEY_NAME"
-echo "Public key: ${PRIVATE_KEY_NAME}.pub"
+# Check the file type of the private key
+file "$PRIVATE_KEY_NAME"
+
+# Clear the passphrase from memory
+unset PASSPHRASE
